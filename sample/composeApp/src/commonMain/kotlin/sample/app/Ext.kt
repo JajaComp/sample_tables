@@ -2,6 +2,7 @@ package sample.app
 
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Path
 import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
@@ -60,4 +61,27 @@ fun Path.moveTo(offset: Offset) {
 
 fun Path.lineTo(offset: Offset) {
     this.lineTo(x = offset.x, y = offset.y)
+}
+
+fun Path.arcTo(
+    centerX: Float,
+    centerY: Float,
+    startAngle: Float,
+    sweepAngle: Float,
+) {
+    arcTo(
+        rect = Rect(
+            offset = Offset(
+                x = centerX,
+                y = centerY,
+            ),
+            size = Size(
+                width = Constant.RADIUS,
+                height = Constant.RADIUS
+            )
+        ),
+        startAngleDegrees = startAngle,
+        sweepAngleDegrees = sweepAngle,
+        forceMoveTo = false,
+    )
 }

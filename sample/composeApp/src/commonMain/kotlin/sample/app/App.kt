@@ -1,11 +1,17 @@
 package sample.app
 
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
@@ -15,6 +21,7 @@ import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.scale
@@ -61,6 +68,16 @@ fun App() {
 //                index = 2
 //            )
 //        ),
+        ReferenceItem(
+            source = ReferenceItem.Target(
+                table = tables[0],
+                index = 1,
+            ),
+            target = ReferenceItem.Target(
+                table = tables[0],
+                index = 2
+            )
+        ),
         ReferenceItem(
             source = ReferenceItem.Target(
                 table = tables[0],
@@ -115,6 +132,25 @@ fun Place(
     var dragStartOffsetInTable by remember { mutableStateOf<Offset?>(null) }
     var canvasOffset by remember { mutableStateOf(Offset.Zero) }
     var scale by remember { mutableStateOf(1f) }
+
+
+    // Рисуем внешнюю рамку таблицы
+    val dashIntervals = floatArrayOf(30f, 20f) // Черта 30px, пробел 20px
+    val totalDashLength = dashIntervals.sum()
+
+    val phase = remember { Animatable(0f) }
+
+    LaunchedEffect(Unit) {
+        phase.animateTo(
+            targetValue = totalDashLength, // Анимируем на полную длину одного цикла черта+пробел
+            animationSpec = infiniteRepeatable(
+                animation = tween(durationMillis = 1000, easing = LinearEasing),
+                repeatMode = RepeatMode.Restart // Начинаем заново после каждого цикла
+            )
+        )
+    }
+    val dashedPathEffect = PathEffect.dashPathEffect(dashIntervals, phase.value)
+
     Canvas(
         modifier = Modifier
             .fillMaxSize()
@@ -172,12 +208,13 @@ fun Place(
                 references.forEach { references ->
                     drawReference(
                         references,
+                        dashedPathEffect
                     )
                 }
                 tables.values.forEach { table ->
                     drawTable(
                         table,
-                        textMeasurer
+                        textMeasurer,
                     )
                 }
             }
@@ -187,11 +224,15 @@ fun Place(
 
 fun DrawScope.drawReference(
     reference: ReferenceItem,
+    dashedPathEffect: PathEffect,
 ) {
     drawPath(
         reference.path,
         Color.Red,
-        style = Stroke(width = 5f)
+        style = Stroke(
+            width = 3f,
+//            pathEffect = dashedPathEffect,
+        )
     )
 }
 
@@ -202,7 +243,6 @@ fun DrawScope.drawTable(
     val tableStrokeWidthPx = 2.dp.toPx()
 
     translate(left = table.position.x, top = table.position.y) {
-        // Рисуем внешнюю рамку таблицы
         drawRect(
             color = table.color,
             topLeft = Offset.Zero,

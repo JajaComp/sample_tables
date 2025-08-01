@@ -30,14 +30,16 @@ data class ReferenceItem(
                     from = point1
                     to = point2
                 }
+                val fromTopToBottom = from.y < to.y
+                // Стартовая линия
+                moveTo(from.position)
+                // Маленькая линия от объекта
                 when (from.side) {
                     LinePath.Side.LEFT -> {
-                        moveTo(from.position)
                         lineTo(from.x - Constant.LINE_OFFSET, from.y)
                     }
 
                     LinePath.Side.RIGHT -> {
-                        moveTo(from.position)
                         lineTo(from.x + Constant.LINE_OFFSET, from.y)
                     }
                 }
@@ -47,21 +49,32 @@ data class ReferenceItem(
                         x = from.x + (abs(to.x - from.x) / 2f),
                         y = from.y
                     )
+                    arcTo(
+                        centerX = from.x + (abs(to.x - from.x) / 2f),
+                        centerY = from.y - if (fromTopToBottom) 0f else Constant.RADIUS,
+                        startAngle = if (fromTopToBottom) 270f else 90f,
+                        sweepAngle = if (fromTopToBottom) 90f else -90f,
+                    )
                     lineTo(
-                        x = from.x + (abs(to.x - from.x) / 2f),
-                        y = to.y
+                        x = from.x + (abs(to.x - from.x) / 2f) + Constant.RADIUS,
+                        y = to.y - if (fromTopToBottom) Constant.RADIUS else -Constant.RADIUS
+                    )
+                    arcTo(
+                        centerX = from.x + (abs(to.x - from.x) / 2f) + Constant.RADIUS,
+                        centerY = to.y - if (fromTopToBottom) Constant.RADIUS else 0f,
+                        startAngle = if (fromTopToBottom) 180f else 180f,
+                        sweepAngle = if (fromTopToBottom) -90f else 90f,
                     )
                 } else {
-                    lineTo(
-                        x = to.x + Constant.LINE_OFFSET,
-                        y = from.y,
+                    arcTo(
+                        centerX = to.x + Constant.LINE_OFFSET - Constant.RADIUS_HALF,
+                        centerY = from.y - if (fromTopToBottom) 0f else Constant.RADIUS,
+                        startAngle = if (fromTopToBottom) 270f else 90f,
+                        sweepAngle = if (fromTopToBottom) 90f else -90f,
                     )
-//                    lineTo(
-//                        x = to.x,
-//                        y = to.y
-//                    )
                 }
 
+                // Финишная линия
                 when (to.side) {
                     LinePath.Side.LEFT -> {
                         lineTo(to.x - Constant.LINE_OFFSET, to.y)
@@ -69,7 +82,16 @@ data class ReferenceItem(
                     }
 
                     LinePath.Side.RIGHT -> {
-                        lineTo(to.x + Constant.LINE_OFFSET, to.y)
+                        lineTo(
+                            to.x + Constant.LINE_OFFSET + Constant.RADIUS_HALF,
+                            to.y - if (fromTopToBottom) Constant.RADIUS_HALF else -Constant.RADIUS_HALF
+                        )
+                        arcTo(
+                            centerX = to.x + Constant.LINE_OFFSET - Constant.RADIUS_HALF,
+                            centerY = to.y - if (fromTopToBottom) Constant.RADIUS else 0f,
+                            startAngle = if (fromTopToBottom) 0f else 0f,
+                            sweepAngle = if (fromTopToBottom) 90f else -90f,
+                        )
                         lineTo(to.position)
                     }
                 }
@@ -78,6 +100,18 @@ data class ReferenceItem(
     }
 
     private fun generatePoints(): LinePath {
+        if (source.table == target.table) {
+            return LinePath(
+                from = LinePath.Position(
+                    source.cellPosition().centerRight,
+                    side = LinePath.Side.RIGHT
+                ),
+                to = LinePath.Position(
+                    target.cellPosition().centerRight,
+                    side = LinePath.Side.RIGHT
+                ),
+            )
+        }
         val sourcePosition = source.cellPosition()
         val targetPosition = target.cellPosition()
         val pointFrom: Offset
