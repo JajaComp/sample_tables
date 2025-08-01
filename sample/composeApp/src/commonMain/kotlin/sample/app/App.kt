@@ -15,6 +15,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.DrawScope
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.scale
 import androidx.compose.ui.graphics.drawscope.translate
 import androidx.compose.ui.input.pointer.PointerEventType
@@ -36,24 +37,37 @@ private val boldText = TextStyle.Default.copy(
 @OptIn(ExperimentalUuidApi::class, ExperimentalComposeUiApi::class)
 @Composable
 fun App() {
+    val tables = List(3) { index ->
+        TableItem.initial(
+            "Title ${index + 1}",
+            listOf(
+                CellItem("Line 1"),
+                CellItem("Line 2"),
+                CellItem("Line 3"),
+            ),
+            Color.Black,
+            Offset(0 + 150f * index, 0f),
+        )
+    }
+    val references = listOf(
+        ReferenceItem(
+            source = ReferenceItem.Target(
+                table = tables[0],
+                index = 0,
+            ),
+            target = ReferenceItem.Target(
+                table = tables[1],
+                index = 1
+            )
+        )
+    )
     Box(
         modifier = Modifier
             .fillMaxSize()
             .background(Color.White),
     ) {
-        val tables = List(3) { index ->
-            TableItem.initial(
-                "Title ${index + 1}",
-                listOf(
-                    CellItem("Line 1"),
-                    CellItem("Line 2"),
-                    CellItem("Line 3"),
-                ),
-                Color.Black,
-                Offset(0 + 150f * index, 0f),
-            )
-        }
-        Place(tables)
+
+        Place(tables, references)
     }
 }
 
@@ -61,9 +75,18 @@ fun App() {
 @Composable
 fun Place(
     initTables: List<TableItem>,
+    initReferences: List<ReferenceItem>,
 ) {
     var tables by remember {
         mutableStateOf(initTables)
+    }
+    var ttt by remember {
+        mutableStateOf(
+            initTables.associateBy(TableItem::id)
+        )
+    }
+    var references by remember {
+        mutableStateOf(initReferences)
     }
     val textMeasurer = rememberTextMeasurer()
     var selectedTableId by remember { mutableStateOf<Uuid?>(null) }
@@ -102,6 +125,17 @@ fun Place(
                                     table
                                 }
                             }
+                            selectedTableId?.let { selectedTableId ->
+                                references = references.map { reference ->
+                                    if (reference.hasTable(selectedTableId)) {
+                                        reference.copy(
+                                            version = reference.version + 1
+                                        )
+                                    } else {
+                                        reference
+                                    }
+                                }
+                            }
                         } else {
                             canvasOffset += (dragAmount)
                         }
@@ -125,6 +159,11 @@ fun Place(
                 scale = scale,
                 pivot = Offset.Zero
             ) {
+                references.forEach { references ->
+                    drawReference(
+                        references,
+                    )
+                }
                 tables.forEach { table ->
                     drawTable(
                         table,
@@ -136,12 +175,21 @@ fun Place(
     }
 }
 
+fun DrawScope.drawReference(
+    reference: ReferenceItem,
+) {
+    drawPath(
+        reference.path,
+        Color.Red,
+        style = Stroke(width = 5f)
+    )
+}
+
 fun DrawScope.drawTable(
     table: TableItem,
     textMeasurer: TextMeasurer,
 ) {
     val tableStrokeWidthPx = 2.dp.toPx()
-
 
     translate(left = table.position.x, top = table.position.y) {
         // Рисуем внешнюю рамку таблицы
@@ -195,9 +243,3 @@ fun DrawScope.drawTitle(
     )
 }
 
-fun TableItem.getRect(): androidx.compose.ui.geometry.Rect {
-    return androidx.compose.ui.geometry.Rect(
-        offset = this.position,
-        size = this.size
-    )
-}
