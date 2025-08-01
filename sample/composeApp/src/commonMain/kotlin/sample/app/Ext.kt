@@ -1,6 +1,8 @@
 package sample.app
 
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
+import androidx.compose.ui.graphics.Path
 import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
 
@@ -27,4 +29,35 @@ fun TableItem.getRect(): Rect {
 @OptIn(ExperimentalUuidApi::class)
 fun ReferenceItem.hasTable(tableId: Uuid): Boolean {
     return (this.source.table.id == tableId || this.target.table.id == tableId)
+}
+
+@OptIn(ExperimentalUuidApi::class)
+fun ReferenceItem.tryUpdate(
+    table: TableItem,
+): ReferenceItem {
+    if (!this.hasTable(table.id)) {
+        return this
+    }
+    val newSource = if (table.id == source.table.id) {
+        source.copy(table = table)
+    } else {
+        source
+    }
+    val newTarget = if (table.id == target.table.id) {
+        target.copy(table = table)
+    } else {
+        target
+    }
+    return copy(
+        source = newSource,
+        target = newTarget
+    )
+}
+
+fun Path.moveTo(offset: Offset) {
+    this.moveTo(x = offset.x, y = offset.y)
+}
+
+fun Path.lineTo(offset: Offset) {
+    this.lineTo(x = offset.x, y = offset.y)
 }

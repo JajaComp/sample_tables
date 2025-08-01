@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -50,6 +51,16 @@ fun App() {
         )
     }
     val references = listOf(
+//        ReferenceItem(
+//            source = ReferenceItem.Target(
+//                table = tables[0],
+//                index = 1,
+//            ),
+//            target = ReferenceItem.Target(
+//                table = tables[0],
+//                index = 2
+//            )
+//        ),
         ReferenceItem(
             source = ReferenceItem.Target(
                 table = tables[0],
@@ -58,6 +69,16 @@ fun App() {
             target = ReferenceItem.Target(
                 table = tables[1],
                 index = 1
+            )
+        ),
+        ReferenceItem(
+            source = ReferenceItem.Target(
+                table = tables[1],
+                index = 2,
+            ),
+            target = ReferenceItem.Target(
+                table = tables[2],
+                index = 2
             )
         )
     )
@@ -77,13 +98,14 @@ fun Place(
     initTables: List<TableItem>,
     initReferences: List<ReferenceItem>,
 ) {
-    var tables by remember {
-        mutableStateOf(initTables)
-    }
-    var ttt by remember {
-        mutableStateOf(
-            initTables.associateBy(TableItem::id)
-        )
+    val tables = remember {
+        mutableStateMapOf<Uuid, TableItem>().apply {
+            putAll(
+                initTables
+                    .associateBy(TableItem::id)
+                    .toMutableMap()
+            )
+        }
     }
     var references by remember {
         mutableStateOf(initReferences)
@@ -100,7 +122,7 @@ fun Place(
                 detectDragGestures(
                     onDragStart = { startOffset ->
                         val adjustedStartOffset = (startOffset - canvasOffset) / scale
-                        val tableClicked = tables.firstOrNull { table ->
+                        val tableClicked = tables.values.firstOrNull { table ->
                             val tableRect = table.getRect()
                             tableRect.contains(adjustedStartOffset)
                         }
@@ -116,24 +138,12 @@ fun Place(
                     onDrag = { change, dragAmount ->
                         change.consume()
                         if (selectedTableId != null && dragStartOffsetInTable != null) {
-                            tables = tables.map { table ->
-                                if (table.id == selectedTableId) {
-//                                    val newPosition = change.position - dragStartOffsetInTable!! - canvasOffset
-                                    val newPosition = (table.position + dragAmount / scale)
-                                    table.copy(position = newPosition)
-                                } else {
-                                    table
-                                }
-                            }
-                            selectedTableId?.let { selectedTableId ->
+                            selectedTableId?.also { selectedTableId ->
+                                val table = tables.getValue(selectedTableId)
+                                val newPosition = (table.position + dragAmount / scale)
+                                tables[selectedTableId] = table.copy(position = newPosition)
                                 references = references.map { reference ->
-                                    if (reference.hasTable(selectedTableId)) {
-                                        reference.copy(
-                                            version = reference.version + 1
-                                        )
-                                    } else {
-                                        reference
-                                    }
+                                    reference.tryUpdate(table)
                                 }
                             }
                         } else {
@@ -164,7 +174,7 @@ fun Place(
                         references,
                     )
                 }
-                tables.forEach { table ->
+                tables.values.forEach { table ->
                     drawTable(
                         table,
                         textMeasurer

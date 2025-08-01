@@ -23,7 +23,7 @@ kotlin {
             implementation(compose.runtime)
             implementation(compose.ui)
             implementation(compose.foundation)
-            implementation(project(":shared"))
+//            implementation(project(":shared"))
         }
 
         jvmMain.dependencies {
