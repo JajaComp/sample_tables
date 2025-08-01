@@ -207,7 +207,7 @@ fun DrawScope.drawTable(
             color = table.color,
             topLeft = Offset.Zero,
             size = table.size,
-            style = androidx.compose.ui.graphics.drawscope.Stroke(tableStrokeWidthPx)
+            style = Stroke(tableStrokeWidthPx)
         )
         drawTitle(
             table,

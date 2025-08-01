@@ -3,6 +3,7 @@ package sample.app
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
+import kotlin.math.abs
 
 data class ReferenceItem(
     val source: Target,
@@ -19,7 +20,16 @@ data class ReferenceItem(
 
     private fun generatePath(): Path {
         return Path().apply {
-            generatePoints().also { (from, to) ->
+            generatePoints().also { (point1, point2) ->
+                val from: LinePath.Position
+                val to: LinePath.Position
+                if (point2.x < point1.x) {
+                    from = point2
+                    to = point1
+                } else {
+                    from = point1
+                    to = point2
+                }
                 when (from.side) {
                     LinePath.Side.LEFT -> {
                         moveTo(from.position)
@@ -30,6 +40,26 @@ data class ReferenceItem(
                         moveTo(from.position)
                         lineTo(from.x + Constant.LINE_OFFSET, from.y)
                     }
+                }
+
+                if (from.side != to.side) {
+                    lineTo(
+                        x = from.x + (abs(to.x - from.x) / 2f),
+                        y = from.y
+                    )
+                    lineTo(
+                        x = from.x + (abs(to.x - from.x) / 2f),
+                        y = to.y
+                    )
+                } else {
+                    lineTo(
+                        x = to.x + Constant.LINE_OFFSET,
+                        y = from.y,
+                    )
+//                    lineTo(
+//                        x = to.x,
+//                        y = to.y
+//                    )
                 }
 
                 when (to.side) {
@@ -54,17 +84,21 @@ data class ReferenceItem(
         val pointTo: Offset
         val sideFrom: LinePath.Side
         val sideTo: LinePath.Side
-        if (sourcePosition.right < targetPosition.left) {
+        val sourceLeft = sourcePosition.left - Constant.LINE_OFFSET
+        val sourceRight = sourcePosition.right + Constant.LINE_OFFSET
+        val targetLeft = targetPosition.left - Constant.LINE_OFFSET
+        val targetRight = targetPosition.right + Constant.LINE_OFFSET
+        if (sourceRight < targetLeft) {
             pointFrom = sourcePosition.centerRight
             pointTo = targetPosition.centerLeft
             sideFrom = LinePath.Side.RIGHT
             sideTo = LinePath.Side.LEFT
-        } else if (sourcePosition.right > targetPosition.left && sourcePosition.right < targetPosition.right) {
+        } else if (sourceRight > targetLeft && sourceRight < targetRight) {
             pointFrom = sourcePosition.centerRight
             pointTo = targetPosition.centerRight
             sideFrom = LinePath.Side.RIGHT
             sideTo = LinePath.Side.RIGHT
-        } else if (sourcePosition.right > targetPosition.right && sourcePosition.left < targetPosition.right) {
+        } else if (sourceRight > targetRight && sourceLeft < targetRight) {
             pointFrom = sourcePosition.centerRight
             pointTo = targetPosition.centerRight
             sideFrom = LinePath.Side.RIGHT
