@@ -21,6 +21,8 @@ data class ReferenceItem(
     private fun generatePath(): Path {
         return Path().apply {
             generatePoints().also { (point1, point2) ->
+                val radius = Constant.RADIUS.coerceAtMost(abs(point1.y - point2.y))
+                val halfRadius = radius / 2f
                 val from: LinePath.Position
                 val to: LinePath.Position
                 if (point2.x < point1.x) {
@@ -51,26 +53,29 @@ data class ReferenceItem(
                     )
                     arcTo(
                         centerX = from.x + (abs(to.x - from.x) / 2f),
-                        centerY = from.y - if (fromTopToBottom) 0f else Constant.RADIUS,
+                        centerY = from.y - if (fromTopToBottom) 0f else radius,
                         startAngle = if (fromTopToBottom) 270f else 90f,
                         sweepAngle = if (fromTopToBottom) 90f else -90f,
+                        radius = radius,
                     )
                     lineTo(
-                        x = from.x + (abs(to.x - from.x) / 2f) + Constant.RADIUS,
-                        y = to.y - if (fromTopToBottom) Constant.RADIUS else -Constant.RADIUS
+                        x = from.x + (abs(to.x - from.x) / 2f) + radius,
+                        y = to.y - if (fromTopToBottom) radius else -radius
                     )
                     arcTo(
-                        centerX = from.x + (abs(to.x - from.x) / 2f) + Constant.RADIUS,
-                        centerY = to.y - if (fromTopToBottom) Constant.RADIUS else 0f,
+                        centerX = from.x + (abs(to.x - from.x) / 2f) + radius,
+                        centerY = to.y - if (fromTopToBottom) radius else 0f,
                         startAngle = if (fromTopToBottom) 180f else 180f,
                         sweepAngle = if (fromTopToBottom) -90f else 90f,
+                        radius = radius,
                     )
                 } else {
                     arcTo(
-                        centerX = to.x + Constant.LINE_OFFSET - Constant.RADIUS_HALF,
-                        centerY = from.y - if (fromTopToBottom) 0f else Constant.RADIUS,
+                        centerX = to.x + Constant.LINE_OFFSET - halfRadius,
+                        centerY = from.y - if (fromTopToBottom) 0f else radius,
                         startAngle = if (fromTopToBottom) 270f else 90f,
                         sweepAngle = if (fromTopToBottom) 90f else -90f,
+                        radius = radius,
                     )
                 }
 
@@ -83,14 +88,15 @@ data class ReferenceItem(
 
                     LinePath.Side.RIGHT -> {
                         lineTo(
-                            to.x + Constant.LINE_OFFSET + Constant.RADIUS_HALF,
-                            to.y - if (fromTopToBottom) Constant.RADIUS_HALF else -Constant.RADIUS_HALF
+                            to.x + Constant.LINE_OFFSET + halfRadius,
+                            to.y - if (fromTopToBottom) halfRadius else -halfRadius
                         )
                         arcTo(
-                            centerX = to.x + Constant.LINE_OFFSET - Constant.RADIUS_HALF,
-                            centerY = to.y - if (fromTopToBottom) Constant.RADIUS else 0f,
+                            centerX = to.x + Constant.LINE_OFFSET - halfRadius,
+                            centerY = to.y - if (fromTopToBottom) radius else 0f,
                             startAngle = if (fromTopToBottom) 0f else 0f,
                             sweepAngle = if (fromTopToBottom) 90f else -90f,
+                            radius = radius,
                         )
                         lineTo(to.position)
                     }

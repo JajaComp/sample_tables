@@ -68,6 +68,7 @@ fun Path.arcTo(
     centerY: Float,
     startAngle: Float,
     sweepAngle: Float,
+    radius: Float = Constant.RADIUS,
 ) {
     arcTo(
         rect = Rect(
@@ -76,8 +77,8 @@ fun Path.arcTo(
                 y = centerY,
             ),
             size = Size(
-                width = Constant.RADIUS,
-                height = Constant.RADIUS
+                width = radius,
+                height = radius
             )
         ),
         startAngleDegrees = startAngle,
