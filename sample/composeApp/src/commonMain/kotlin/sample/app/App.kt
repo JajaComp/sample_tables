@@ -22,25 +22,22 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.PathEffect
-import androidx.compose.ui.graphics.drawscope.DrawScope
-import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.scale
 import androidx.compose.ui.graphics.drawscope.translate
 import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.input.pointer.onPointerEvent
 import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.text.TextMeasurer
-import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.drawText
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.rememberTextMeasurer
-import androidx.compose.ui.unit.dp
 import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
+import sample.app.data.CellItem
+import sample.app.data.ReferenceItem
+import sample.app.data.TableItem
+import sample.app.draw.drawReference
+import sample.app.draw.drawTable
+import sample.app.extensions.getRect
+import sample.app.extensions.tryUpdate
 
-private val boldText = TextStyle.Default.copy(
-    fontWeight = FontWeight.Bold,
-)
 
 @OptIn(ExperimentalUuidApi::class, ExperimentalComposeUiApi::class)
 @Composable
@@ -111,7 +108,7 @@ fun App() {
 
 @OptIn(ExperimentalUuidApi::class, ExperimentalComposeUiApi::class)
 @Composable
-fun Place(
+private fun Place(
     initTables: List<TableItem>,
     initReferences: List<ReferenceItem>,
 ) {
@@ -133,9 +130,7 @@ fun Place(
     var canvasOffset by remember { mutableStateOf(Offset.Zero) }
     var scale by remember { mutableStateOf(1f) }
 
-
-    // Рисуем внешнюю рамку таблицы
-    val dashIntervals = floatArrayOf(30f, 20f) // Черта 30px, пробел 20px
+    val dashIntervals = floatArrayOf(10f, 5f)
     val totalDashLength = dashIntervals.sum()
 
     val phase = remember { Animatable(0f) }
@@ -144,7 +139,7 @@ fun Place(
         phase.animateTo(
             targetValue = totalDashLength, // Анимируем на полную длину одного цикла черта+пробел
             animationSpec = infiniteRepeatable(
-                animation = tween(durationMillis = 1000, easing = LinearEasing),
+                animation = tween(durationMillis = 500, easing = LinearEasing),
                 repeatMode = RepeatMode.Restart // Начинаем заново после каждого цикла
             )
         )
@@ -177,13 +172,14 @@ fun Place(
                             selectedTableId?.also { selectedTableId ->
                                 val table = tables.getValue(selectedTableId)
                                 val newPosition = (table.position + dragAmount / scale)
+//                                val newPosition = change.position - dragStartOffsetInTable!! - canvasOffset
                                 tables[selectedTableId] = table.copy(position = newPosition)
                                 references = references.map { reference ->
                                     reference.tryUpdate(table)
                                 }
                             }
                         } else {
-                            canvasOffset += (dragAmount)
+                            canvasOffset += dragAmount
                         }
                     },
                     onDragEnd = {
@@ -194,7 +190,7 @@ fun Place(
             }
             .onPointerEvent(PointerEventType.Scroll) {
                 val delta = it.changes.first().scrollDelta.y
-                scale = (scale + delta / 5f).coerceAtLeast(0.4f).coerceAtMost(4f)
+                scale = (scale + delta / 5f).coerceIn(0.4f, 4f)
             }
     ) {
         translate(
@@ -221,75 +217,3 @@ fun Place(
         }
     }
 }
-
-fun DrawScope.drawReference(
-    reference: ReferenceItem,
-    dashedPathEffect: PathEffect,
-) {
-    drawPath(
-        reference.path,
-        Color.Red,
-        style = Stroke(
-            width = 3f,
-//            pathEffect = dashedPathEffect,
-        )
-    )
-}
-
-fun DrawScope.drawTable(
-    table: TableItem,
-    textMeasurer: TextMeasurer,
-) {
-    val tableStrokeWidthPx = 2.dp.toPx()
-
-    translate(left = table.position.x, top = table.position.y) {
-        drawRect(
-            color = table.color,
-            topLeft = Offset.Zero,
-            size = table.size,
-            style = Stroke(tableStrokeWidthPx)
-        )
-        drawTitle(
-            table,
-            textMeasurer
-        )
-        // Рисуем горизонтальные линии (разделители строк)
-        for (i in 0 until table.cell.size) {
-            val y = (i + 1) * Constant.CELL_HEIGHT
-            drawText(
-                textMeasurer = textMeasurer,
-                text = table.cell[i].text,
-                topLeft = Offset(
-                    x = 0f,
-                    y = y,
-                ),
-            )
-            drawLine(
-                color = table.color,
-                start = Offset(0f, y),
-                end = Offset(table.size.width, y),
-                strokeWidth = tableStrokeWidthPx / 2
-            )
-        }
-    }
-}
-
-fun DrawScope.drawTitle(
-    table: TableItem,
-    textMeasurer: TextMeasurer,
-) {
-    val tableStrokeWidthPx = 2.dp.toPx()
-    drawText(
-        textMeasurer = textMeasurer,
-        text = table.title,
-        topLeft = Offset.Zero,
-        style = boldText
-    )
-    drawLine(
-        color = table.color,
-        start = Offset.Zero,
-        end = Offset(table.size.width, 0f),
-        strokeWidth = tableStrokeWidthPx / 2
-    )
-}
-

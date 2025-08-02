@@ -1,17 +1,17 @@
-package sample.app
+package sample.app.extensions
 
-import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
-import androidx.compose.ui.geometry.Size
-import androidx.compose.ui.graphics.Path
 import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
+import sample.app.Constant
+import sample.app.data.ReferenceItem
+import sample.app.data.TableItem
 
-fun ReferenceItem.Target.cellPosition(): Rect {
+internal fun ReferenceItem.Target.cellPosition(): Rect {
     return this.table.cellPosition(this.index)
 }
 
-fun TableItem.cellPosition(index: Int): Rect {
+internal fun TableItem.cellPosition(index: Int): Rect {
     return Rect(
         left = this.position.x,
         top = this.position.y + (Constant.CELL_HEIGHT * (index + 1)),
@@ -20,7 +20,7 @@ fun TableItem.cellPosition(index: Int): Rect {
     )
 }
 
-fun TableItem.getRect(): Rect {
+internal fun TableItem.getRect(): Rect {
     return Rect(
         offset = this.position,
         size = this.size
@@ -28,12 +28,12 @@ fun TableItem.getRect(): Rect {
 }
 
 @OptIn(ExperimentalUuidApi::class)
-fun ReferenceItem.hasTable(tableId: Uuid): Boolean {
+internal fun ReferenceItem.hasTable(tableId: Uuid): Boolean {
     return (this.source.table.id == tableId || this.target.table.id == tableId)
 }
 
 @OptIn(ExperimentalUuidApi::class)
-fun ReferenceItem.tryUpdate(
+internal fun ReferenceItem.tryUpdate(
     table: TableItem,
 ): ReferenceItem {
     if (!this.hasTable(table.id)) {
@@ -52,37 +52,5 @@ fun ReferenceItem.tryUpdate(
     return copy(
         source = newSource,
         target = newTarget
-    )
-}
-
-fun Path.moveTo(offset: Offset) {
-    this.moveTo(x = offset.x, y = offset.y)
-}
-
-fun Path.lineTo(offset: Offset) {
-    this.lineTo(x = offset.x, y = offset.y)
-}
-
-fun Path.arcTo(
-    centerX: Float,
-    centerY: Float,
-    startAngle: Float,
-    sweepAngle: Float,
-    radius: Float = Constant.RADIUS,
-) {
-    arcTo(
-        rect = Rect(
-            offset = Offset(
-                x = centerX,
-                y = centerY,
-            ),
-            size = Size(
-                width = radius,
-                height = radius
-            )
-        ),
-        startAngleDegrees = startAngle,
-        sweepAngleDegrees = sweepAngle,
-        forceMoveTo = false,
     )
 }

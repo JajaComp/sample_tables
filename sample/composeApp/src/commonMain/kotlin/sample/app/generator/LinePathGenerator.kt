@@ -1,27 +1,23 @@
-package sample.app
+package sample.app.generator
 
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import kotlin.math.abs
+import sample.app.Constant
+import sample.app.data.ReferenceItem
+import sample.app.extensions.arcTo
+import sample.app.extensions.cellPosition
+import sample.app.extensions.lineTo
+import sample.app.extensions.moveTo
 
-data class ReferenceItem(
-    val source: Target,
-    val target: Target,
-    val color: Color = Color.Red,
-    val version: Int = 0,
-) {
-    data class Target(
-        val table: TableItem,
-        val index: Int,
-    )
-
-    val path: Path = generatePath()
-
-    private fun generatePath(): Path {
+internal object LinePathGenerator {
+    fun ReferenceItem.generatePath(): Path {
         return Path().apply {
-            generatePoints().also { (point1, point2) ->
-                val radius = Constant.RADIUS.coerceAtMost(abs(point1.y - point2.y))
+            generatePoints(
+                source = source,
+                target = target
+            ).also { (point1, point2) ->
+                val radius = Constant.LINE_RADIUS.coerceAtMost(abs(point1.y - point2.y))
                 val halfRadius = radius / 2f
                 val from: LinePath.Position
                 val to: LinePath.Position
@@ -105,7 +101,10 @@ data class ReferenceItem(
         }
     }
 
-    private fun generatePoints(): LinePath {
+    private fun generatePoints(
+        source: ReferenceItem.Target,
+        target: ReferenceItem.Target,
+    ): LinePath {
         if (source.table == target.table) {
             return LinePath(
                 from = LinePath.Position(
